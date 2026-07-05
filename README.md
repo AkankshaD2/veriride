@@ -60,7 +60,4 @@ python agent.py
 RAG (Retrieval-Augmented Generation) is a technique that ...
 ```
 
-## Built with
 
-- [Anthropic Python SDK](https://github.com/anthropics/anthropic-sdk-python)
-- Claude Sonnet 4 with web search tool
