@@ -1,0 +1,8 @@
+flask
+easyocr
+opencv-python
+ultralytics
+rapidfuzz
+psycopg2-binary
+streamlit
+python-dotenv
