@@ -35,7 +35,7 @@ under a second if something's off.
 | Text extraction | EasyOCR |
 | Fuzzy matching | RapidFuzz |
 | Backend | Flask + SQLite (local) |
-| Frontend | Streamlit |
+| Frontend | Streamlit *(next up)* |
 
 ## 📊 Phase 1 results — OCR baseline
 
@@ -52,13 +52,21 @@ matching layer (RapidFuzz) exists downstream: OCR confidence alone isn't a
 reliable correctness signal, so the system treats low-confidence reads as
 "uncertain" rather than a false match or false mismatch.
 
+## ✅ Phase 2 progress — backend is live
+
+`/book` and `/verify` are working end-to-end: book a ride with an expected
+plate, upload a photo, and the API runs detection → OCR → fuzzy matching →
+returns a verdict, logged straight to the database. First real test correctly
+flagged a genuine mismatch between the expected and photographed plate —
+exactly the failure case this project exists to catch.
+
 ## 📍 Where this stands
 
 - [x] Architecture + planning
 - [x] OCR pipeline — baseline accuracy benchmarked (42% on real photos)
-- [ ] 🔧 Flask API + database *(currently here)*
-- [ ] Fuzzy match engine
-- [ ] Streamlit frontend
+- [x] Flask API + database (`/book`, `/verify`)
+- [x] Fuzzy match engine (integrated into `/verify`)
+- [ ] 🔧 `/history` route + Streamlit frontend *(currently here)*
 - [ ] Deployed demo + video walkthrough
 
 ## 🔮 Planned (V2)
@@ -89,7 +97,8 @@ pip install -r requirements.txt
 python app.py
 ```
 
-More setup instructions land here once the backend is fully wired up.
+`POST /book` with `{"expected_plate": "..."}` to create a booking, then
+`POST /verify` (form-data: `booking_id`, `image`) to check a plate against it.
 
 ---
 
