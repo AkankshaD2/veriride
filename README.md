@@ -23,7 +23,7 @@ under a second if something's off.
 ![Architecture](assets/architecture.png)
 
 ```
-📸 photo of plate → 🔍 YOLOv8 detects plate → 🔤 EasyOCR reads text
+📸 photo of plate → 🔍 contour-based plate detection → 🔤 EasyOCR reads text
    → 🧮 RapidFuzz matches vs booking → ✅ match / ⚠️ uncertain / 🚫 mismatch
 ```
 
@@ -31,17 +31,32 @@ under a second if something's off.
 
 | Layer | Tool |
 |---|---|
-| Plate detection | YOLOv8 |
+| Plate detection | OpenCV contour detection (YOLOv8 planned as v2 upgrade) |
 | Text extraction | EasyOCR |
 | Fuzzy matching | RapidFuzz |
-| Backend | Flask + PostgreSQL |
+| Backend | Flask + SQLite (local) |
 | Frontend | Streamlit |
+
+## 📊 Phase 1 results — OCR baseline
+
+Tested on 12 real auto-rickshaw plate photos (varied angles/lighting):
+
+- **~42% usable, correct plate reads** on the first pass
+- **33% plate-detection failure rate** — contour-based detection struggles on
+  cluttered backgrounds or low-contrast plates
+- Remaining failures are character-level OCR confusion (O↔0, 1↔I↔L) — a known,
+  documented challenge in ANPR systems, not unique to this pipeline
+
+This is an honest baseline, not a polished number — it's exactly why the fuzzy
+matching layer (RapidFuzz) exists downstream: OCR confidence alone isn't a
+reliable correctness signal, so the system treats low-confidence reads as
+"uncertain" rather than a false match or false mismatch.
 
 ## 📍 Where this stands
 
 - [x] Architecture + planning
-- [ ] 🔬 OCR pipeline — accuracy benchmarking *(currently here)*
-- [ ] Flask API + database
+- [x] OCR pipeline — baseline accuracy benchmarked (42% on real photos)
+- [ ] 🔧 Flask API + database *(currently here)*
 - [ ] Fuzzy match engine
 - [ ] Streamlit frontend
 - [ ] Deployed demo + video walkthrough
@@ -52,13 +67,15 @@ under a second if something's off.
       their registered profile photo at booking time, flagging a mismatch if a
       different person shows up. Same "expected vs actual" pattern as plate
       verification, applied to identity instead of just the vehicle.
+- [ ] Swap contour-based detection for a fine-tuned YOLOv8 model to improve on
+      the 33% detection-failure rate documented above.
 
 ## 🎯 Why build this
 
 Vehicle-number mismatches in ride-hailing bookings are a real, reported safety
 gap — small enough to ignore, big enough to matter at 11pm alone. This isn't a
 toy dataset project; it's an end-to-end CV pipeline (detection → OCR → fuzzy
-matching) aimed at an actual problem.
+matching) aimed at an actual problem, with honestly benchmarked results.
 
 > **Note:** standalone prototype — the "booked plate" is entered manually here
 > to simulate what a ride app would provide via its own booking API.
@@ -67,11 +84,12 @@ matching) aimed at an actual problem.
 
 ```bash
 git clone https://github.com/AkankshaD2/veriride.git
-cd veriride
+cd veriride/backend
 pip install -r requirements.txt
+python app.py
 ```
 
-More setup instructions land here once the backend is up.
+More setup instructions land here once the backend is fully wired up.
 
 ---
 
