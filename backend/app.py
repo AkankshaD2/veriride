@@ -1,15 +1,21 @@
 from flask import Flask, request, jsonify
-import psycopg2
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
+import sqlite3
 
 app = Flask(__name__)
 
 
 def get_connection():
-    return psycopg2.connect(os.getenv("DATABASE_URL"))
+    conn = sqlite3.connect("veriride.db")
+    return conn
+
+
+def init_db():
+    conn = get_connection()
+    cur = conn.cursor()
+    with open("schema.sql", "r") as f:
+        cur.executescript(f.read())
+    conn.commit()
+    conn.close()
 
 
 @app.route("/book", methods=["POST"])
@@ -23,16 +29,16 @@ def book_ride():
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO bookings (expected_plate) VALUES (%s) RETURNING id",
+        "INSERT INTO bookings (expected_plate) VALUES (?)",
         (expected_plate,)
     )
-    booking_id = cur.fetchone()[0]
+    booking_id = cur.lastrowid
     conn.commit()
-    cur.close()
     conn.close()
 
     return jsonify({"booking_id": booking_id, "expected_plate": expected_plate}), 201
 
 
 if __name__ == "__main__":
+    init_db()
     app.run(debug=True)
