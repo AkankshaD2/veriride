@@ -131,6 +131,34 @@ def verify_ride():
     }), 201
 
 
+@app.route("/history", methods=["GET"])
+def get_history():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT verifications.id, bookings.expected_plate, verifications.extracted_plate,
+               verifications.confidence, verifications.match_status, verifications.created_at
+        FROM verifications
+        JOIN bookings ON verifications.booking_id = bookings.id
+        ORDER BY verifications.created_at DESC
+    """)
+    rows = cur.fetchall()
+    conn.close()
+
+    history = []
+    for row in rows:
+        history.append({
+            "id": row[0],
+            "expected_plate": row[1],
+            "extracted_plate": row[2],
+            "confidence": row[3],
+            "match_status": row[4],
+            "created_at": row[5]
+        })
+
+    return jsonify(history), 200
+
+
 if __name__ == "__main__":
     init_db()
     app.run(debug=True)
