@@ -11,7 +11,7 @@
 ---
 
 You book a ride. The app shows a vehicle number. The auto that pulls up has a
-*different* one. You get in anyway — because what else are you supposed to do,
+_different_ one. You get in anyway — because what else are you supposed to do,
 stand there comparing digits at 11pm?
 
 That gap is the problem. **VeriRide closes it** — point your camera at the actual
@@ -20,8 +20,8 @@ under a second if something's off.
 
 ## 📸 Screenshots
 
-| Book a ride | Verify before boarding | History |
-|---|---|---|
+| Book a ride                         | Verify before boarding                  | History                                   |
+| ----------------------------------- | --------------------------------------- | ----------------------------------------- |
 | ![Book](assets/screenshot-book.png) | ![Verify](assets/screenshot-verify.png) | ![History](assets/screenshot-history.png) |
 
 ## ⚙️ How it works
@@ -35,13 +35,13 @@ under a second if something's off.
 
 ## 🧱 Built with
 
-| Layer | Tool |
-|---|---|
+| Layer           | Tool                                                    |
+| --------------- | ------------------------------------------------------- |
 | Plate detection | OpenCV contour detection (YOLOv8 planned as v2 upgrade) |
-| Text extraction | EasyOCR |
-| Fuzzy matching | RapidFuzz |
-| Backend | Flask + SQLite (local) |
-| Frontend | Streamlit |
+| Text extraction | EasyOCR                                                 |
+| Fuzzy matching  | RapidFuzz                                               |
+| Backend         | Flask + SQLite (local)                                  |
+| Frontend        | Streamlit                                               |
 
 ## 📊 Phase 1 results — OCR baseline
 
@@ -84,7 +84,7 @@ Postman — the whole flow runs in the browser now.
 - [x] Flask API + database (`/book`, `/verify`, `/history`)
 - [x] Fuzzy match engine (integrated into `/verify`)
 - [x] Streamlit frontend (booking, verification, history — all working)
-- [ ] 🔧 Deployed live demo + video walkthrough *(currently here)*
+- [ ] 🔧 Deployed live demo + video walkthrough _(currently here)_
 
 ## 🔮 Planned (V2)
 
@@ -108,6 +108,7 @@ matching) aimed at an actual problem, with honestly benchmarked results.
 ## 🚀 Getting started
 
 **Backend:**
+
 ```bash
 git clone https://github.com/AkankshaD2/veriride.git
 cd veriride/backend
@@ -116,6 +117,7 @@ python app.py
 ```
 
 **Frontend (in a second terminal):**
+
 ```bash
 cd veriride/frontend
 pip install streamlit requests pandas
