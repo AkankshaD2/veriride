@@ -11,12 +11,18 @@
 ---
 
 You book a ride. The app shows a vehicle number. The auto that pulls up has a
-*different* one. You get in anyway — because what else are you supposed to do,
+_different_ one. You get in anyway — because what else are you supposed to do,
 stand there comparing digits at 11pm?
 
 That gap is the problem. **VeriRide closes it** — point your camera at the actual
 plate, it reads the number, checks it against what you booked, tells you in
 under a second if something's off.
+
+## 📸 Screenshots
+
+| Book a ride                         | Verify before boarding                  | History                                   |
+| ----------------------------------- | --------------------------------------- | ----------------------------------------- |
+| ![Book](assets/screenshot-book.png) | ![Verify](assets/screenshot-verify.png) | ![History](assets/screenshot-history.png) |
 
 ## ⚙️ How it works
 
@@ -29,13 +35,13 @@ under a second if something's off.
 
 ## 🧱 Built with
 
-| Layer | Tool |
-|---|---|
+| Layer           | Tool                                                    |
+| --------------- | ------------------------------------------------------- |
 | Plate detection | OpenCV contour detection (YOLOv8 planned as v2 upgrade) |
-| Text extraction | EasyOCR |
-| Fuzzy matching | RapidFuzz |
-| Backend | Flask + SQLite (local) |
-| Frontend | Streamlit |
+| Text extraction | EasyOCR                                                 |
+| Fuzzy matching  | RapidFuzz                                               |
+| Backend         | Flask + SQLite (local)                                  |
+| Frontend        | Streamlit                                               |
 
 ## 📊 Phase 1 results — OCR baseline
 
@@ -52,14 +58,33 @@ matching layer (RapidFuzz) exists downstream: OCR confidence alone isn't a
 reliable correctness signal, so the system treats low-confidence reads as
 "uncertain" rather than a false match or false mismatch.
 
+## ✅ Phase 2 — backend complete
+
+All three API routes are live and tested end-to-end:
+
+- **`POST /book`** — create a booking with an expected plate number
+- **`POST /verify`** — upload a photo, runs detection → OCR → fuzzy matching,
+  logs the verdict against the booking
+- **`GET /history`** — full log of past verifications, newest first
+
+First real test correctly flagged a genuine mismatch between the expected and
+photographed plate — exactly the failure case this project exists to catch.
+
+## 🎨 Phase 3 — Streamlit frontend complete
+
+A full working UI on top of the API — book a ride, upload a plate photo, and
+get an instant match/mismatch/uncertain verdict, styled around Indian
+auto-rickshaw plates and traffic-signal colour coding. No more testing through
+Postman — the whole flow runs in the browser now.
+
 ## 📍 Where this stands
 
 - [x] Architecture + planning
 - [x] OCR pipeline — baseline accuracy benchmarked (42% on real photos)
-- [ ] 🔧 Flask API + database *(currently here)*
-- [ ] Fuzzy match engine
-- [ ] Streamlit frontend
-- [ ] Deployed demo + video walkthrough
+- [x] Flask API + database (`/book`, `/verify`, `/history`)
+- [x] Fuzzy match engine (integrated into `/verify`)
+- [x] Streamlit frontend (booking, verification, history — all working)
+- [ ] 🔧 Deployed live demo + video walkthrough _(currently here)_
 
 ## 🔮 Planned (V2)
 
@@ -82,6 +107,8 @@ matching) aimed at an actual problem, with honestly benchmarked results.
 
 ## 🚀 Getting started
 
+**Backend:**
+
 ```bash
 git clone https://github.com/AkankshaD2/veriride.git
 cd veriride/backend
@@ -89,8 +116,16 @@ pip install -r requirements.txt
 python app.py
 ```
 
-More setup instructions land here once the backend is fully wired up.
+**Frontend (in a second terminal):**
 
----
+```bash
+cd veriride/frontend
+pip install streamlit requests pandas
+streamlit run streamlit_app.py
+```
 
-⭐ if this is useful, and PRs welcome once the MVP lands.
+- `POST /book` with `{"expected_plate": "..."}` to create a booking
+- `POST /verify` (form-data: `booking_id`, `image`) to check a plate
+- `GET /history` to see past verifications
+
+
