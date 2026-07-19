@@ -18,6 +18,12 @@ That gap is the problem. **VeriRide closes it** — point your camera at the act
 plate, it reads the number, checks it against what you booked, tells you in
 under a second if something's off.
 
+## 📸 Screenshots
+
+| Book a ride | Verify before boarding | History |
+|---|---|---|
+| ![Book](assets/screenshot-book.png) | ![Verify](assets/screenshot-verify.png) | ![History](assets/screenshot-history.png) |
+
 ## ⚙️ How it works
 
 ![Architecture](assets/architecture.png)
@@ -35,7 +41,7 @@ under a second if something's off.
 | Text extraction | EasyOCR |
 | Fuzzy matching | RapidFuzz |
 | Backend | Flask + SQLite (local) |
-| Frontend | Streamlit *(next up)* |
+| Frontend | Streamlit |
 
 ## 📊 Phase 1 results — OCR baseline
 
@@ -64,14 +70,21 @@ All three API routes are live and tested end-to-end:
 First real test correctly flagged a genuine mismatch between the expected and
 photographed plate — exactly the failure case this project exists to catch.
 
+## 🎨 Phase 3 — Streamlit frontend complete
+
+A full working UI on top of the API — book a ride, upload a plate photo, and
+get an instant match/mismatch/uncertain verdict, styled around Indian
+auto-rickshaw plates and traffic-signal colour coding. No more testing through
+Postman — the whole flow runs in the browser now.
+
 ## 📍 Where this stands
 
 - [x] Architecture + planning
 - [x] OCR pipeline — baseline accuracy benchmarked (42% on real photos)
 - [x] Flask API + database (`/book`, `/verify`, `/history`)
 - [x] Fuzzy match engine (integrated into `/verify`)
-- [ ] 🔧 Streamlit frontend *(currently here)*
-- [ ] Deployed demo + video walkthrough
+- [x] Streamlit frontend (booking, verification, history — all working)
+- [ ] 🔧 Deployed live demo + video walkthrough *(currently here)*
 
 ## 🔮 Planned (V2)
 
@@ -94,11 +107,19 @@ matching) aimed at an actual problem, with honestly benchmarked results.
 
 ## 🚀 Getting started
 
+**Backend:**
 ```bash
 git clone https://github.com/AkankshaD2/veriride.git
 cd veriride/backend
 pip install -r requirements.txt
 python app.py
+```
+
+**Frontend (in a second terminal):**
+```bash
+cd veriride/frontend
+pip install streamlit requests pandas
+streamlit run streamlit_app.py
 ```
 
 - `POST /book` with `{"expected_plate": "..."}` to create a booking
