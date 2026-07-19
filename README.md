@@ -22,7 +22,7 @@ under a second if something's off.
 
 | Book a ride                         | Verify before boarding                  | History                                   |
 | ----------------------------------- | --------------------------------------- | ----------------------------------------- |
-| ![Book](assets/screenshot-book(1).png) | ![Verify](assets/screenshot-verify(1).png) | ![History](assets/screenshot-history(1).png) |
+| ![Book](assets/screenshot-book (1).png) | ![Verify](assets/screenshot-verify (1).png) | ![History](assets/screenshot-history (1).png) |
 
 ## ⚙️ How it works
 
