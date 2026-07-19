@@ -52,21 +52,25 @@ matching layer (RapidFuzz) exists downstream: OCR confidence alone isn't a
 reliable correctness signal, so the system treats low-confidence reads as
 "uncertain" rather than a false match or false mismatch.
 
-## ✅ Phase 2 progress — backend is live
+## ✅ Phase 2 — backend complete
 
-`/book` and `/verify` are working end-to-end: book a ride with an expected
-plate, upload a photo, and the API runs detection → OCR → fuzzy matching →
-returns a verdict, logged straight to the database. First real test correctly
-flagged a genuine mismatch between the expected and photographed plate —
-exactly the failure case this project exists to catch.
+All three API routes are live and tested end-to-end:
+
+- **`POST /book`** — create a booking with an expected plate number
+- **`POST /verify`** — upload a photo, runs detection → OCR → fuzzy matching,
+  logs the verdict against the booking
+- **`GET /history`** — full log of past verifications, newest first
+
+First real test correctly flagged a genuine mismatch between the expected and
+photographed plate — exactly the failure case this project exists to catch.
 
 ## 📍 Where this stands
 
 - [x] Architecture + planning
 - [x] OCR pipeline — baseline accuracy benchmarked (42% on real photos)
-- [x] Flask API + database (`/book`, `/verify`)
+- [x] Flask API + database (`/book`, `/verify`, `/history`)
 - [x] Fuzzy match engine (integrated into `/verify`)
-- [ ] 🔧 `/history` route + Streamlit frontend *(currently here)*
+- [ ] 🔧 Streamlit frontend *(currently here)*
 - [ ] Deployed demo + video walkthrough
 
 ## 🔮 Planned (V2)
@@ -97,8 +101,9 @@ pip install -r requirements.txt
 python app.py
 ```
 
-`POST /book` with `{"expected_plate": "..."}` to create a booking, then
-`POST /verify` (form-data: `booking_id`, `image`) to check a plate against it.
+- `POST /book` with `{"expected_plate": "..."}` to create a booking
+- `POST /verify` (form-data: `booking_id`, `image`) to check a plate
+- `GET /history` to see past verifications
 
 ---
 
