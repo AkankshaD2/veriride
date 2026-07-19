@@ -130,4 +130,4 @@ streamlit run streamlit_app.py
 
 ---
 
-⭐ if this is useful, and PRs welcome once the MVP lands.
+
