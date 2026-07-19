@@ -128,6 +128,4 @@ streamlit run streamlit_app.py
 - `POST /verify` (form-data: `booking_id`, `image`) to check a plate
 - `GET /history` to see past verifications
 
----
 
-⭐ if this is useful, and PRs welcome once the MVP lands.
