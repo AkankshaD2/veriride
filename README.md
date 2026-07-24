@@ -1,4 +1,5 @@
 ![VeriRide](assets/banner.png)
+### 🔗 [Live Demo →](https://veriride-gbtapjwvoka8nhx5vi62kr.streamlit.app)
 
 # VeriRide
 
