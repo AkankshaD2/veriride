@@ -5,7 +5,7 @@
 
 **Verify before you ride.**
 
-[![Status](https://img.shields.io/badge/status-building-orange)]()
+[![Status](https://img.shields.io/badge/status-live-brightgreen)](https://veriride-gbtapjwvoka8nhx5vi62kr.streamlit.app)
 [![Python](https://img.shields.io/badge/python-3.10+-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 
