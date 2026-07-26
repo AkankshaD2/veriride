@@ -85,7 +85,7 @@ Postman — the whole flow runs in the browser now.
 - [x] Flask API + database (`/book`, `/verify`, `/history`)
 - [x] Fuzzy match engine (integrated into `/verify`)
 - [x] Streamlit frontend (booking, verification, history — all working)
-- [ ] 🔧 Deployed live demo + video walkthrough _(currently here)_
+
 
 ## 🔮 Planned (V2)
 
