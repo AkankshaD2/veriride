@@ -1,10 +1,11 @@
 ![VeriRide](assets/banner.png)
+### 🔗 [Live Demo →](https://veriride-gbtapjwvoka8nhx5vi62kr.streamlit.app)
 
 # VeriRide
 
 **Verify before you ride.**
 
-[![Status](https://img.shields.io/badge/status-building-orange)]()
+[![Status](https://img.shields.io/badge/status-live-brightgreen)](https://veriride-gbtapjwvoka8nhx5vi62kr.streamlit.app)
 [![Python](https://img.shields.io/badge/python-3.10+-blue)]()
 [![License](https://img.shields.io/badge/license-MIT-green)]()
 
@@ -84,7 +85,7 @@ Postman — the whole flow runs in the browser now.
 - [x] Flask API + database (`/book`, `/verify`, `/history`)
 - [x] Fuzzy match engine (integrated into `/verify`)
 - [x] Streamlit frontend (booking, verification, history — all working)
-- [ ] 🔧 Deployed live demo + video walkthrough _(currently here)_
+
 
 ## 🔮 Planned (V2)
 
