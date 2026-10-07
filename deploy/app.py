@@ -11,14 +11,18 @@ DB_PATH = "veriride.db"
 
 st.set_page_config(page_title="VeriRide", page_icon="🛺", layout="centered")
 
+
 @st.cache_resource
 def get_reader():
     return easyocr.Reader(['en'])
 
+
 reader = get_reader()
+
 
 def get_connection():
     return sqlite3.connect(DB_PATH, check_same_thread=False)
+
 
 def init_db():
     conn = get_connection()
@@ -47,13 +51,16 @@ def init_db():
     conn.commit()
     conn.close()
 
+
 init_db()
+
 
 def find_plate_candidates(img, top_n=3):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray = cv2.bilateralFilter(gray, 11, 17, 17)
     edged = cv2.Canny(gray, 30, 200)
-    contours, _ = cv2.findContours(edged.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(
+        edged.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     contours = sorted(contours, key=cv2.contourArea, reverse=True)[:30]
     candidates = []
     for c in contours:
@@ -64,10 +71,12 @@ def find_plate_candidates(img, top_n=3):
             candidates.append((x, y, w, h))
     return candidates[:top_n]
 
+
 def clean_text(text):
     text = text.upper()
     text = re.sub(r'\bIND[I]?A?\b', '', text)
     return re.sub(r'[^A-Z0-9]', '', text)
+
 
 def get_final_plate(img):
     candidates = find_plate_candidates(img)
@@ -82,6 +91,7 @@ def get_final_plate(img):
             best_result, best_conf = cleaned, conf
     return best_result, best_conf
 
+
 def get_match_status(expected, extracted, confidence):
     if not extracted:
         return "uncertain"
@@ -92,19 +102,23 @@ def get_match_status(expected, extracted, confidence):
         return "mismatch"
     return "uncertain"
 
+
 def book_ride(expected_plate):
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("INSERT INTO bookings (expected_plate) VALUES (?)", (expected_plate,))
+    cur.execute("INSERT INTO bookings (expected_plate) VALUES (?)",
+                (expected_plate,))
     booking_id = cur.lastrowid
     conn.commit()
     conn.close()
     return booking_id
 
+
 def verify_ride(booking_id, image_bytes):
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT expected_plate FROM bookings WHERE id = ?", (booking_id,))
+    cur.execute("SELECT expected_plate FROM bookings WHERE id = ?",
+                (booking_id,))
     row = cur.fetchone()
     if row is None:
         conn.close()
@@ -115,7 +129,8 @@ def verify_ride(booking_id, image_bytes):
     img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
 
     extracted_plate, confidence = get_final_plate(img)
-    match_status = get_match_status(expected_plate, extracted_plate or "", confidence)
+    match_status = get_match_status(
+        expected_plate, extracted_plate or "", confidence)
 
     cur.execute(
         "INSERT INTO verifications (booking_id, extracted_plate, confidence, match_status) VALUES (?, ?, ?, ?)",
@@ -130,6 +145,7 @@ def verify_ride(booking_id, image_bytes):
         "confidence": confidence,
         "match_status": match_status
     }
+
 
 def get_history():
     conn = get_connection()
@@ -148,6 +164,7 @@ def get_history():
          "confidence": r[3], "match_status": r[4], "created_at": r[5]}
         for r in rows
     ]
+
 
 st.markdown("""
 <style>
@@ -231,6 +248,7 @@ st.markdown("""
 <hr class="vr-divider">
 """, unsafe_allow_html=True)
 
+
 def plate_card(label, value):
     st.markdown(f"""
     <div class="plate-card">
@@ -240,6 +258,7 @@ def plate_card(label, value):
         <div class="plate-value">{value}</div>
     </div>
     """, unsafe_allow_html=True)
+
 
 def status_banner(status, expected, extracted):
     config = {
@@ -255,6 +274,7 @@ def status_banner(status, expected, extracted):
     </div>
     """, unsafe_allow_html=True)
 
+
 def empty_state(message):
     st.markdown(f"""
     <div class="plate-card" style="text-align:center; border-style:dashed;">
@@ -263,10 +283,12 @@ def empty_state(message):
     </div>
     """, unsafe_allow_html=True)
 
+
 tab1, tab2, tab3 = st.tabs(["01 · BOOK", "02 · VERIFY", "03 · HISTORY"])
 
 with tab1:
-    st.markdown('<div class="vr-step">Step 01</div><div class="vr-section-title">Book a ride</div>', unsafe_allow_html=True)
+    st.markdown('<div class="vr-step">Step 01</div><div class="vr-section-title">Book a ride</div>',
+                unsafe_allow_html=True)
     expected_plate = st.text_input("Expected vehicle number (as shown in app)")
     if st.button("Book Ride"):
         if expected_plate:
@@ -277,30 +299,38 @@ with tab1:
             st.warning("Please enter a plate number.")
 
 with tab2:
-    st.markdown('<div class="vr-step">Step 02</div><div class="vr-section-title">Verify before boarding</div>', unsafe_allow_html=True)
-    default_id = str(st.session_state.get("last_booking_id", ""))
-    booking_id = st.text_input("Booking ID", value=default_id)
-    uploaded_photo = st.file_uploader("Upload a photo of the plate", type=["jpg", "jpeg", "png", "webp"])
+    st.markdown('<div class="vr-step">Step 02</div><div class="vr-section-title">Verify before boarding</div>',
+                unsafe_allow_html=True)
 
-    if st.button("Verify"):
-        if booking_id and uploaded_photo:
-            result = verify_ride(booking_id, uploaded_photo.read())
-            if "error" in result:
-                st.error(f"Verification failed: {result['error']}")
+    booking_id = st.session_state.get("last_booking_id")
+
+    if not booking_id:
+        st.warning(
+            "Pehle '01 · BOOK' tab mein ride book kar, phir yahan scan kar.")
+    else:
+        photo = st.camera_input("Point camera at the plate")
+
+        if st.button("Verify"):
+            if photo:
+                result = verify_ride(booking_id, photo.getvalue())
+                if "error" in result:
+                    st.error(f"Verification failed: {result['error']}")
+                else:
+                    status_banner(
+                        result["match_status"], result["expected_plate"], result["extracted_plate"])
             else:
-                status_banner(result["match_status"], result["expected_plate"], result["extracted_plate"])
-        else:
-            st.warning("Enter a booking ID and upload a photo.")
-
+                st.warning("Pehle plate ki photo click kar.")
 with tab3:
-    st.markdown('<div class="vr-step">Step 03</div><div class="vr-section-title">Verification history</div>', unsafe_allow_html=True)
+    st.markdown('<div class="vr-step">Step 03</div><div class="vr-section-title">Verification history</div>',
+                unsafe_allow_html=True)
     history = get_history()
     if history:
         df = pd.DataFrame(history)
         colors = {"match": "background-color: rgba(76,175,109,0.2); color:#4CAF6D;",
                   "mismatch": "background-color: rgba(229,72,77,0.2); color:#E5484D;",
                   "uncertain": "background-color: rgba(232,163,61,0.2); color:#E8A33D;"}
-        styled = df.style.map(lambda v: colors.get(v, ""), subset=["match_status"])
+        styled = df.style.map(lambda v: colors.get(
+            v, ""), subset=["match_status"])
         st.dataframe(styled, use_container_width=True)
     else:
         empty_state("Book a ride in the first tab to get started.")
