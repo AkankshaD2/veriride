@@ -6,7 +6,7 @@ import easyocr
 import re
 import pandas as pd
 from rapidfuzz import fuzz
-
+from urllib.parse import quote
 DB_PATH = "veriride.db"
 
 st.set_page_config(page_title="VeriRide", page_icon="🛺", layout="centered")
@@ -284,6 +284,13 @@ def empty_state(message):
     """, unsafe_allow_html=True)
 
 
+def whatsapp_link(number, message):
+    digits = re.sub(r'\D', '', number or "")
+    if len(digits) == 10:      # Indian number without country code
+        digits = "91" + digits
+    return f"https://wa.me/{digits}?text={quote(message)}"
+
+
 tab1, tab2, tab3 = st.tabs(["01 · BOOK", "02 · VERIFY", "03 · HISTORY"])
 
 with tab1:
@@ -309,7 +316,8 @@ with tab2:
             "Pehle '01 · BOOK' tab mein ride book kar, phir yahan scan kar.")
     else:
         photo = st.camera_input("Point camera at the plate")
-
+        st.link_button("TEST WhatsApp", whatsapp_link(
+            "98XXXXXXXX", "Test message from VeriRide"))
         if st.button("Verify"):
             if photo:
                 result = verify_ride(booking_id, photo.getvalue())
