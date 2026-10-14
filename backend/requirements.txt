@@ -6,3 +6,4 @@ gunicorn
 opencv-python-headless
 easyocr
 rapidfuzz
+streamlit-geolocation

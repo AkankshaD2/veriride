@@ -5,8 +5,15 @@ import numpy as np
 import easyocr
 import re
 import pandas as pd
-from rapidfuzz import fuzz
 from urllib.parse import quote
+from rapidfuzz import fuzz
+
+try:
+    from streamlit_geolocation import streamlit_geolocation
+    GEO_OK = True
+except Exception:
+    GEO_OK = False
+
 DB_PATH = "veriride.db"
 
 st.set_page_config(page_title="VeriRide", page_icon="🛺", layout="centered")
@@ -234,6 +241,14 @@ hr.vr-divider { border: none; height: 3px; width: 70px; margin: 22px 0 30px 0;
 .status-mismatch .status-label { color: var(--red); }
 .status-uncertain { background: rgba(232,163,61,0.1); border-color: var(--amber); }
 .status-uncertain .status-label { color: var(--amber); }
+ 
+div[role="radiogroup"] { gap: 4px; border-bottom: 1px solid var(--surface-border); padding-bottom: 2px; }
+div[role="radiogroup"] label { background: transparent !important; padding: 6px 12px !important; border-radius: 6px 6px 0 0; cursor: pointer; }
+div[role="radiogroup"] label > div:first-child { display: none !important; }
+div[role="radiogroup"] label p { font-family: 'IBM Plex Mono', monospace !important; font-size: 0.8rem !important;
+    letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted) !important; }
+div[role="radiogroup"] label:has(input:checked) { border-bottom: 3px solid var(--yellow); }
+div[role="radiogroup"] label:has(input:checked) p { color: var(--yellow) !important; }
 </style>
 <div class="vr-top-strip"></div>
 """, unsafe_allow_html=True)
@@ -261,6 +276,7 @@ def plate_card(label, value):
 
 
 def status_banner(status, expected, extracted):
+    extracted = extracted or "no plate"
     config = {
         "match": ("✅", "MATCH", f"{extracted} confirmed. Safe to board."),
         "mismatch": ("🚫", "MISMATCH", f"Expected {expected}, detected {extracted}. Do not board!"),
@@ -285,52 +301,121 @@ def empty_state(message):
 
 
 def whatsapp_link(number, message):
-    digits = re.sub(r'\D', '', number or "")
-    if len(digits) == 10:      # Indian number without country code
+    digits = re.sub(r"\D", "", number or "")
+
+    if len(digits) == 10:
         digits = "91" + digits
+    elif len(digits) == 12 and digits.startswith("91"):
+        pass
+    else:
+        raise ValueError(
+            "Enter a valid 10-digit Indian mobile number "
+            "or a 12-digit number starting with 91."
+        )
+
     return f"https://wa.me/{digits}?text={quote(message)}"
 
 
-tab1, tab2, tab3 = st.tabs(["01 · BOOK", "02 · VERIFY", "03 · HISTORY"])
+def handle_book():
+    plate = st.session_state.get("plate_input", "").strip()
+    if not plate:
+        st.session_state["book_error"] = True
+        return
+    st.session_state["book_error"] = False
+    st.session_state["last_booking_id"] = book_ride(plate)
+    st.session_state["booked_plate"] = plate.upper()
+    st.session_state["last_result"] = None
+    st.session_state["emergency_contact"] = st.session_state.get(
+        "contact_input", "")
 
-with tab1:
-    st.markdown('<div class="vr-step">Step 01</div><div class="vr-section-title">Book a ride</div>',
+
+def handle_new_booking():
+    for k in ("last_booking_id", "booked_plate", "last_result"):
+        st.session_state[k] = None
+
+
+booking_id = st.session_state.get("last_booking_id")
+
+# ---------- STEP 1: BOOK ----------
+st.markdown('<div class="vr-step">Step 01</div><div class="vr-section-title">Book your ride</div>',
+            unsafe_allow_html=True)
+
+if not booking_id:
+    st.text_input("Expected vehicle number (as shown in app)",
+                  key="plate_input")
+    st.text_input("Emergency contact WhatsApp number (optional)",
+                  key="contact_input")
+    st.button("Book Ride", on_click=handle_book)
+    if st.session_state.get("book_error"):
+        st.warning("Please enter a plate number.")
+else:
+    plate_card(f"Booking confirmed · ID {booking_id}", st.session_state.get(
+        "booked_plate", ""))
+    st.button("New booking", on_click=handle_new_booking)
+
+    # ---------- STEP 2: SCAN ----------
+    st.markdown('<hr class="vr-divider">', unsafe_allow_html=True)
+    st.markdown('<div class="vr-step">Step 02</div><div class="vr-section-title">Scan the plate</div>',
                 unsafe_allow_html=True)
-    expected_plate = st.text_input("Expected vehicle number (as shown in app)")
-    if st.button("Book Ride"):
-        if expected_plate:
-            booking_id = book_ride(expected_plate)
-            st.session_state["last_booking_id"] = booking_id
-            plate_card("Booking Confirmed — ID", booking_id)
+
+    photo = st.camera_input("Point camera at the plate",
+                            key=f"cam_{booking_id}")
+
+    if st.button("Verify"):
+        if photo:
+            st.session_state["last_result"] = verify_ride(
+                booking_id, photo.getvalue())
         else:
-            st.warning("Please enter a plate number.")
+            st.warning("Pehle plate ki photo click kar.")
 
-with tab2:
-    st.markdown('<div class="vr-step">Step 02</div><div class="vr-section-title">Verify before boarding</div>',
-                unsafe_allow_html=True)
+    # ---------- STEP 3: RESULT ----------
+    result = st.session_state.get("last_result")
+    if result:
+        st.markdown('<hr class="vr-divider">', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="vr-step">Step 03</div><div class="vr-section-title">Result</div>', unsafe_allow_html=True)
 
-    booking_id = st.session_state.get("last_booking_id")
+        if "error" in result:
+            st.error(f"Verification failed: {result['error']}")
+        else:
+            status = result["match_status"]
+            status_banner(
+                status, result["expected_plate"], result["extracted_plate"])
+            contact = st.session_state.get("emergency_contact", "")
 
-    if not booking_id:
-        st.warning(
-            "Pehle '01 · BOOK' tab mein ride book kar, phir yahan scan kar.")
-    else:
-        photo = st.camera_input("Point camera at the plate")
-        st.link_button("TEST WhatsApp", whatsapp_link(
-            "98XXXXXXXX", "Test message from VeriRide"))
-        if st.button("Verify"):
-            if photo:
-                result = verify_ride(booking_id, photo.getvalue())
-                if "error" in result:
-                    st.error(f"Verification failed: {result['error']}")
+            if status == "match":
+                msg = f"Boarded safely. Vehicle {result['extracted_plate']} matches my booking. - VeriRide"
+                if contact:
+                    st.link_button(
+                        "Send 'boarded safely' on WhatsApp", whatsapp_link(contact, msg))
                 else:
-                    status_banner(
-                        result["match_status"], result["expected_plate"], result["extracted_plate"])
-            else:
-                st.warning("Pehle plate ki photo click kar.")
-with tab3:
-    st.markdown('<div class="vr-step">Step 03</div><div class="vr-section-title">Verification history</div>',
-                unsafe_allow_html=True)
+                    st.info(
+                        "Emergency contact number daalega to yahan one-tap share dikhega.")
+
+            elif status == "mismatch":
+                lat = lon = None
+                if GEO_OK:
+                    st.caption(
+                        "Optional: neeche wala button daba ke apni live location attach kar (permission Allow karna).")
+                    loc = streamlit_geolocation() or {}
+                    lat, lon = loc.get("latitude"), loc.get("longitude")
+                msg = (f"ALERT: Vehicle mismatch! Expected {result['expected_plate']}, "
+                       f"but saw {result['extracted_plate'] or 'unreadable plate'}. "
+                       f"I may be in an unsafe ride.")
+                if lat and lon:
+                    msg += f" My live location: https://www.google.com/maps?q={lat},{lon}"
+                    st.success("Location attached.")
+                msg += " - VeriRide"
+                if contact:
+                    st.link_button("Send ALERT on WhatsApp",
+                                   whatsapp_link(contact, msg))
+                else:
+                    st.info(
+                        "Emergency contact number daalega to yahan one-tap share dikhega.")
+
+# ---------- HISTORY ----------
+st.markdown('<hr class="vr-divider">', unsafe_allow_html=True)
+with st.expander("📜 Verification history"):
     history = get_history()
     if history:
         df = pd.DataFrame(history)
@@ -341,4 +426,4 @@ with tab3:
             v, ""), subset=["match_status"])
         st.dataframe(styled, use_container_width=True)
     else:
-        empty_state("Book a ride in the first tab to get started.")
+        empty_state("Book a ride and scan a plate to see history here.")
